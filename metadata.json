@@ -1,0 +1,8 @@
+{
+  "name": "Antara Engine 4.0",
+  "description": "Multi-tenant enterprise automation foundation with workspace governance, brand profiles, role-based access control, and isolated external integration boundaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,15 @@
+# Provider Capability Matrix — Antara Engine 4.0
+
+Antara Engine 4.0 exposes a live, honest capability matrix in `/dashboard/publishing/accounts` and `/dashboard/system-health` (`src/lib/marketing/providers/registry.ts`). Unconfigured providers stay cleanly isolated as `not_configured` and never block unrelated modules.
+
+| Provider | Official API | Readiness Behavior | Supported Capabilities | Unsupported / External Review Constraints |
+| --- | --- | --- | --- | --- |
+| **Instagram** | Instagram Platform API v21.0 | `not_configured` until `META_APP_ID` + `META_APP_SECRET` | Single image & Reels container publishing, container polling/reconciliation, comments, policy-aware DM replies, insights | No text-only feed posts; Business/Creator accounts only; Meta App Review required for Live Mode Advanced Access |
+| **Facebook Pages** | Facebook Graph API v21.0 | `not_configured` until `META_APP_ID` + `META_APP_SECRET` | Page discovery, text/photo/video/Reel publishing, comments, Messenger policy-aware replies, insights | No personal timeline posting; no deprecated Groups API; Meta App Review required for non-developer users |
+| **YouTube** | YouTube Data API v3 | Uses Google OAuth (`GOOGLE_INTEGRATION_CLIENT_ID/SECRET`) | Resumable video upload, metadata management, channel/video stats | Quota-limited uploads; Google OAuth verification required for unverified app users |
+| **LinkedIn** | LinkedIn Marketing / Community Management API | `not_configured` until `LINKEDIN_CLIENT_ID/SECRET` | Member & Organization posts (text/image/video), comments & engagement metrics | Organization posting requires LinkedIn Community Management API approval |
+| **TikTok** | TikTok Content Posting API v2 | `not_configured` until `TIKTOK_CLIENT_KEY/SECRET` | Draft upload (`video.upload`) & direct post (`video.publish`) with audit check | Unaudited TikTok apps are strictly restricted by TikTok to `SELF_ONLY` privacy until TikTok API audit completes |
+| **Google Business Profile** | Google Business Profile API | Separate access gate (`not_approved` / `pending` / `approved`) | Local updates, review listing & review replies | Requires explicit Google Business Profile API access approval from Google |
+| **Meta Ads** | Meta Marketing API v21.0 | `not_configured` until Meta credentials + Ad Account scope | Campaign drafts, dry-run validation, budget policy governance, performance sync | Paid spend strictly requires Owner authorization + numeric daily/total caps |
+| **Canva Connect** | Canva Connect API | `not_configured` until `CANVA_CLIENT_ID/SECRET` | OAuth PKCE, async design export job polling, persistence to Firebase Storage | Temporary export URLs expire quickly; must persist into workspace media storage before publishing |
+| **Google Apps Script** | Apps Script API + Drive API (Phase 2) | `not_configured` until Google OAuth credentials | Project create/sync, backups, versions, web-app/API deployments, executions & triggers | Requires Google OAuth Consent Screen verification for external non-test users |

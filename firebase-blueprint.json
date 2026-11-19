@@ -1,0 +1,940 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated Antara Engine user identity, timezone, and onboarding preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "jobTitle": { "type": "string", "maxLength": 100 },
+        "photoUrl": { "type": "string", "maxLength": 1024 },
+        "timezone": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "locale": { "type": "string", "maxLength": 24 },
+        "defaultWorkspaceId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
+        "onboardingCompleted": { "type": "boolean" },
+        "authProvider": { "type": "string", "enum": ["password", "google.com", "unknown"] },
+        "accountDeletionStatus": { "type": "string", "enum": ["none", "requested"] },
+        "accountDeletionRequestedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "timezone", "onboardingCompleted", "authProvider", "createdAt", "updatedAt"]
+    },
+    "UserMembershipIndex": {
+      "title": "UserMembershipIndex",
+      "description": "Per-user workspace membership index for tenant-isolated workspace switching.",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "workspaceSlug": { "type": "string", "minLength": 2, "maxLength": 80, "pattern": "^[a-z0-9\\-]+$" },
+        "role": { "type": "string", "enum": ["owner", "admin", "manager", "editor", "viewer"] },
+        "status": { "type": "string", "enum": ["active", "invited", "suspended"] },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "workspaceName", "workspaceSlug", "role", "status", "joinedAt", "updatedAt"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Multi-tenant organization workspace containing brands, team members, settings, and external integration boundaries.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 80, "pattern": "^[a-z0-9\\-]+$" },
+        "description": { "type": "string", "maxLength": 500 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "timezone": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "planTier": { "type": "string", "enum": ["foundation", "growth", "enterprise"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "slug", "ownerId", "timezone", "planTier", "createdAt", "updatedAt"]
+    },
+    "WorkspaceMember": {
+      "title": "WorkspaceMember",
+      "description": "Authoritative tenant membership and RBAC assignment inside a workspace.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "role": { "type": "string", "enum": ["owner", "admin", "manager", "editor", "viewer"] },
+        "status": { "type": "string", "enum": ["active", "invited", "suspended"] },
+        "invitedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "workspaceId", "email", "displayName", "role", "status", "invitedBy", "joinedAt", "updatedAt"]
+    },
+    "BrandProfile": {
+      "title": "BrandProfile",
+      "description": "Workspace-scoped brand identity profile with editable baseline voice, pillars, audience, and restrictions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 80, "pattern": "^[a-z0-9\\-]+$" },
+        "description": { "type": "string", "maxLength": 600 },
+        "industry": { "type": "string", "maxLength": 80 },
+        "websiteUrl": { "type": "string", "maxLength": 300 },
+        "targetAudience": { "type": "string", "maxLength": 500 },
+        "brandVoice": { "type": "string", "maxLength": 500 },
+        "contentPillars": { "type": "array" },
+        "primaryColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "maxLength": 7 },
+        "accentColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "maxLength": 7 },
+        "restrictions": { "type": "string", "maxLength": 600 },
+        "logoPath": { "type": "string", "maxLength": 512 },
+        "starterKey": { "type": "string", "enum": ["saket_personal", "magnarc", "greenweld", "sapphire", "custom"] },
+        "status": { "type": "string", "enum": ["draft", "active", "archived"] },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "name", "slug", "primaryColor", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "IntegrationRecord": {
+      "title": "IntegrationRecord",
+      "description": "Metadata boundary for external integrations separated cleanly from Antara user login. Never stores plaintext tokens or secrets.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "provider": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "category": { "type": "string", "enum": ["google_workspace", "apps_script", "ai_provider", "social_media", "analytics", "creative"] },
+        "status": { "type": "string", "enum": ["not_configured", "authorization_required", "connected", "expired", "error", "disabled"] },
+        "capabilityClass": { "type": "string", "enum": ["automatically_configured", "already_available", "generated_internally", "connected_via_oauth", "requires_external_authorization", "optional_unused", "disabled"] },
+        "accountEmail": { "type": "string", "maxLength": 254 },
+        "accountName": { "type": "string", "maxLength": 150 },
+        "grantedScopes": { "type": "array" },
+        "requestedScopes": { "type": "array" },
+        "hasRefreshToken": { "type": "boolean" },
+        "consentSeparatedFromLogin": { "type": "boolean" },
+        "lastVerifiedAt": { "type": "string", "format": "date-time" },
+        "lastErrorMessage": { "type": "string", "maxLength": 500 },
+        "configuredBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "provider", "category", "status", "grantedScopes", "consentSeparatedFromLogin", "configuredBy", "createdAt", "updatedAt"]
+    },
+    "EncryptedCredentialRecord": {
+      "title": "EncryptedCredentialRecord",
+      "description": "Server-only AES-256-GCM encrypted external credential storage. Client SDK reads and writes strictly forbidden.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "keyVersion": { "type": "string" },
+        "encryptedPayload": { "type": "string" },
+        "rotatedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "keyVersion", "encryptedPayload", "updatedAt"]
+    },
+    "ApplicationSetting": {
+      "title": "ApplicationSetting",
+      "description": "Workspace-scoped application setting metadata for the centralized 12-category Settings Center (never plaintext secrets).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category": { "type": "string", "enum": ["general", "account", "workspace", "brands", "integrations", "ai_configuration", "security", "encryption_status", "automation", "notifications", "database_health", "deployment_health"] },
+        "valuesJson": { "type": "string", "maxLength": 8192 },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "category", "valuesJson", "updatedBy", "createdAt", "updatedAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable append-only workspace governance audit log.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorEmail": { "type": "string", "maxLength": 254 },
+        "action": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "resourceType": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "resourceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "summary": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "actorUid", "action", "resourceType", "resourceId", "createdAt"]
+    },
+    "NotificationRecord": {
+      "title": "NotificationRecord",
+      "description": "Workspace-scoped system, security, and onboarding notification records.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "message": { "type": "string", "minLength": 2, "maxLength": 500 },
+        "severity": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+        "category": { "type": "string", "maxLength": 60 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "recipientUid", "title", "message", "severity", "category", "read", "createdAt", "updatedAt"]
+    },
+    "WorkspaceInvitation": {
+      "title": "WorkspaceInvitation",
+      "description": "Pending workspace member invitation managed by workspace owners and administrators.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "role": { "type": "string", "enum": ["admin", "manager", "editor", "viewer"] },
+        "status": { "type": "string", "enum": ["pending", "accepted", "revoked"] },
+        "invitedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "email", "role", "status", "invitedBy", "createdAt", "updatedAt"]
+    },
+    "AgentConfig": {
+      "title": "AgentConfig",
+      "description": "Workspace-scoped overrides for Antara Phase 3 specialist agents.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "agentId": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "enabled": { "type": "boolean" },
+        "preferredTaskClass": { "type": "string", "maxLength": 40 },
+        "maxStepsOverride": { "type": "number" },
+        "customFocusNote": { "type": "string", "maxLength": 800 },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "agentId", "enabled", "updatedBy", "updatedAt"]
+    },
+    "WorkflowRecord": {
+      "title": "WorkflowRecord",
+      "description": "Phase 4 placeholder schema for automation workflow definitions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "status": { "type": "string", "enum": ["placeholder", "draft", "paused"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "name", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "ApprovalRecord": {
+      "title": "ApprovalRecord",
+      "description": "Phase 5 placeholder schema for human-in-the-loop publishing approval queue items.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "title", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "GoogleConnection": {
+      "title": "GoogleConnection",
+      "description": "User-owned workspace Google connection metadata. Never stores raw OAuth tokens or secrets.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userEmail": { "type": "string", "format": "email", "maxLength": 254 },
+        "googleAccountId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "googleEmail": { "type": "string", "format": "email", "maxLength": 254 },
+        "googleName": { "type": "string", "maxLength": 160 },
+        "status": { "type": "string", "enum": ["connected", "reauth_required", "revoked", "expired", "disconnected"] },
+        "grantedScopes": { "type": "array" },
+        "encryptedCredentialId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "accessTokenExpiresAt": { "type": "string", "format": "date-time" },
+        "hasRefreshToken": { "type": "boolean" },
+        "sharedWithWorkspace": { "type": "boolean" },
+        "consentSeparatedFromLogin": { "type": "boolean" },
+        "lastVerifiedAt": { "type": "string", "format": "date-time" },
+        "lastErrorCode": { "type": "string", "maxLength": 80 },
+        "lastErrorMessage": { "type": "string", "maxLength": 500 },
+        "connectedAt": { "type": "string", "format": "date-time" },
+        "revokedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "userId", "userEmail", "googleAccountId", "googleEmail", "status", "grantedScopes", "encryptedCredentialId", "accessTokenExpiresAt", "hasRefreshToken", "sharedWithWorkspace", "consentSeparatedFromLogin", "connectedAt", "updatedAt"]
+    },
+    "AppsScriptProject": {
+      "title": "AppsScriptProject",
+      "description": "Workspace-linked Google Apps Script project metadata record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "ownerConnectionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "parentId": { "type": "string", "maxLength": 128 },
+        "projectType": { "type": "string", "enum": ["standalone", "bound"] },
+        "ownershipKind": { "type": "string", "enum": ["created_by_antara", "owned_by_user", "shared_with_user"] },
+        "lastKnownContentHash": { "type": "string", "maxLength": 128 },
+        "lastSyncAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "detached", "error"] },
+        "templateKey": { "type": "string", "maxLength": 64 },
+        "editorUrl": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "scriptId", "workspaceId", "ownerUid", "ownerConnectionId", "title", "projectType", "ownershipKind", "status", "editorUrl", "createdAt", "updatedAt"]
+    },
+    "AppsScriptSnapshot": {
+      "title": "AppsScriptSnapshot",
+      "description": "Pre-update backup or release snapshot of Apps Script project source and manifest.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "versionNumber": { "type": "number" },
+        "files": { "type": "array" },
+        "manifestJson": { "type": "string", "maxLength": 65536 },
+        "contentHash": { "type": "string", "maxLength": 128 },
+        "changeSummary": { "type": "string", "maxLength": 300 },
+        "reason": { "type": "string", "enum": ["pre_update_backup", "manual_backup", "version_release", "restore"] },
+        "createdByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdByEmail": { "type": "string", "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "manifestJson", "contentHash", "reason", "createdByUid", "createdAt"]
+    },
+    "AppsScriptVersion": {
+      "title": "AppsScriptVersion",
+      "description": "Immutable Apps Script API version record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "versionNumber": { "type": "number" },
+        "description": { "type": "string", "maxLength": 200 },
+        "snapshotId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "manifestJson": { "type": "string", "maxLength": 65536 },
+        "creatorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "creatorEmail": { "type": "string", "maxLength": 254 },
+        "changeSummary": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "versionNumber", "description", "snapshotId", "manifestJson", "creatorUid", "createdAt"]
+    },
+    "AppsScriptDeployment": {
+      "title": "AppsScriptDeployment",
+      "description": "Apps Script Web App or API Executable deployment metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "deploymentId": { "type": "string", "minLength": 4, "maxLength": 160 },
+        "deploymentType": { "type": "string", "enum": ["WEB_APP", "API_EXECUTABLE"] },
+        "versionNumber": { "type": "number" },
+        "description": { "type": "string", "maxLength": 200 },
+        "accessLevel": { "type": "string", "enum": ["MYSELF", "DOMAIN", "ANYONE", "ANYONE_ANONYMOUS"] },
+        "executeAs": { "type": "string", "enum": ["USER_ACCESSING", "USER_DEPLOYING"] },
+        "webAppUrl": { "type": "string", "maxLength": 512 },
+        "entryPointsJson": { "type": "string", "maxLength": 16384 },
+        "status": { "type": "string", "enum": ["active", "updating", "archived", "error"] },
+        "verified": { "type": "boolean" },
+        "createdByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "deploymentId", "deploymentType", "versionNumber", "status", "verified", "createdByUid", "createdAt", "updatedAt"]
+    },
+    "ApprovedExecutionTarget": {
+      "title": "ApprovedExecutionTarget",
+      "description": "Allowlisted Apps Script function allowed to execute via Antara Execution Center.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "deploymentId": { "type": "string", "minLength": 4, "maxLength": 160 },
+        "functionName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 300 },
+        "riskClassification": { "type": "string", "enum": ["low", "medium", "high"] },
+        "requiresHumanApproval": { "type": "boolean" },
+        "createdByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "deploymentId", "functionName", "riskClassification", "requiresHumanApproval", "createdByUid", "createdAt"]
+    },
+    "ScriptExecution": {
+      "title": "ScriptExecution",
+      "description": "Audited Apps Script scripts.run invocation history and bounded response metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "deploymentId": { "type": "string", "minLength": 4, "maxLength": 160 },
+        "functionName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "initiatorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "status": { "type": "string", "enum": ["pending", "running", "completed", "failed"] },
+        "startedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "deploymentId", "functionName", "initiatorUid", "status", "startedAt"]
+    },
+    "ScriptTrigger": {
+      "title": "ScriptTrigger",
+      "description": "Antara-owned Apps Script installable trigger registry entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "scriptId": { "type": "string", "minLength": 6, "maxLength": 128 },
+        "handler": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "triggerType": { "type": "string", "enum": ["time_hourly", "time_daily", "time_weekly", "on_open", "on_edit", "on_change"] },
+        "timezone": { "type": "string", "maxLength": 64 },
+        "ownership": { "type": "string", "enum": ["antara_managed"] },
+        "state": { "type": "string", "enum": ["active", "paused", "pending_install", "unsupported", "error", "removed"] },
+        "createdByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "scriptId", "handler", "triggerType", "timezone", "ownership", "state", "createdByUid", "createdAt", "updatedAt"]
+    },
+    "GoogleIntegrationAudit": {
+      "title": "GoogleIntegrationAudit",
+      "description": "Immutable append-only Google integration & Apps Script activity log.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorEmail": { "type": "string", "maxLength": 254 },
+        "operation": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "providerClassification": { "type": "string", "enum": ["success", "denied", "reauth_required", "quota_limited", "error", "blocked"] },
+        "summary": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "actorUid", "operation", "providerClassification", "summary", "createdAt"]
+    },
+    "OrchestratorRun": {
+      "title": "OrchestratorRun",
+      "description": "Persistent Phase 3 multi-agent orchestration run state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "prompt": { "type": "string", "maxLength": 6000 },
+        "status": { "type": "string", "enum": ["queued", "running", "completed", "partially_completed", "failed", "cancelled", "needs_configuration"] },
+        "correlationId": { "type": "string", "maxLength": 64 },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "prompt", "status", "correlationId", "createdBy", "createdAt", "updatedAt"]
+    },
+    "AgentTask": {
+      "title": "AgentTask",
+      "description": "Individual specialist task node inside an orchestrator DAG.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "agentId": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "runId", "agentId", "status"]
+    },
+    "AgentExecutionEvent": {
+      "title": "AgentExecutionEvent",
+      "description": "Immutable step-by-step execution timeline record for AI runs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventType": { "type": "string" },
+        "message": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "runId", "eventType", "message", "createdAt"]
+    },
+    "AgentArtifact": {
+      "title": "AgentArtifact",
+      "description": "Structured brief, draft, strategy, or report emitted by a specialist agent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "agentId": { "type": "string", "maxLength": 64 },
+        "kind": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 240 },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "runId", "agentId", "kind", "title", "createdBy", "createdAt"]
+    },
+    "BrandKnowledgeFact": {
+      "title": "BrandKnowledgeFact",
+      "description": "20-category structured brand knowledge record with provenance and verification status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "brandId": { "type": "string" },
+        "category": { "type": "string" },
+        "title": { "type": "string" },
+        "statement": { "type": "string" },
+        "verificationStatus": { "type": "string" },
+        "approvalStatus": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "brandId", "category", "title", "statement", "verificationStatus", "approvalStatus", "createdBy", "createdAt", "updatedAt"]
+    },
+    "MemoryItem": {
+      "title": "MemoryItem",
+      "description": "7-namespace persistent workspace & brand memory with promotion workflow.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "namespace": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string", "enum": ["candidate", "approved", "rejected", "superseded"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "namespace", "title", "content", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "ResearchSource": {
+      "title": "ResearchSource",
+      "description": "Deduplicated external web research or grounding citation metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "url": { "type": "string" },
+        "domain": { "type": "string" },
+        "contentHash": { "type": "string" },
+        "retrievedAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "url", "domain", "contentHash", "retrievedAt", "createdBy", "createdAt"]
+    },
+    "ClaimEvidence": {
+      "title": "ClaimEvidence",
+      "description": "Claim verification evaluation record linking assertions to supporting or contradicting sources.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "claimText": { "type": "string" },
+        "verificationStatus": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "claimText", "verificationStatus", "createdBy", "createdAt", "updatedAt"]
+    },
+    "StrategyRecord": {
+      "title": "StrategyRecord",
+      "description": "7/14/30-day brand content strategy calendar plan.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "brandId": { "type": "string" },
+        "title": { "type": "string" },
+        "horizonDays": { "type": "number" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "brandId", "title", "horizonDays", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "ContentDraft": {
+      "title": "ContentDraft",
+      "description": "Phase 3 brand-grounded content draft (never auto-published).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "brandId": { "type": "string" },
+        "channel": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "brandId", "channel", "title", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "NormalizedEvent": {
+      "title": "NormalizedEvent",
+      "description": "Deduplicated workspace event envelope triggering Phase 3 intelligence playbooks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "eventType": { "type": "string" },
+        "dedupeKey": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "eventType", "dedupeKey", "status", "createdBy", "createdAt"]
+    },
+    "PlaybookRun": {
+      "title": "PlaybookRun",
+      "description": "Execution trace record for one of the 8 intelligence event playbooks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "playbookId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "playbookId", "eventId", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "AiUsageLedger": {
+      "title": "AiUsageLedger",
+      "description": "Immutable AI token and model latency/cost tracking record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "runId": { "type": "string" },
+        "agentId": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "inputTokens": { "type": "number" },
+        "outputTokens": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "runId", "agentId", "provider", "model", "inputTokens", "outputTokens", "createdAt"]
+    },
+    "AiConversation": {
+      "title": "AiConversation",
+      "description": "Saved workspace AI Command Center conversation thread.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "title": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "title", "createdBy", "createdAt", "updatedAt"]
+    },
+    "AiMessage": {
+      "title": "AiMessage",
+      "description": "Immutable message turn inside a Command Center conversation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "role": { "type": "string" },
+        "content": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "workspaceId", "conversationId", "role", "content", "createdBy", "createdAt"]
+    },
+    "Phase4MarketingDocument": {
+      "title": "Phase4MarketingDocument",
+      "description": "Versioned (4.0.0) workspace-scoped Phase 4 marketing execution document (content, creative, assets, social accounts, schedules, approvals, autonomy, inbox, reviews, leads, campaigns, analytics, experiments, activity).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "schemaVersion": { "type": "string", "enum": ["4.0.0"] }
+      },
+      "required": ["id", "workspaceId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user identity and timezone record restricted strictly to the owning uid."
+    },
+    "/users/{userId}/memberships/{workspaceId}": {
+      "schema": { "$ref": "#/entities/UserMembershipIndex" },
+      "description": "Per-user workspace membership projection for workspace switching."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "Multi-tenant organization workspace root document."
+    },
+    "/workspaces/{workspaceId}/members/{memberId}": {
+      "schema": { "$ref": "#/entities/WorkspaceMember" },
+      "description": "Master RBAC membership source of truth."
+    },
+    "/workspaces/{workspaceId}/brands/{brandId}": {
+      "schema": { "$ref": "#/entities/BrandProfile" },
+      "description": "Workspace-scoped brand identity profiles."
+    },
+    "/workspaces/{workspaceId}/integrations/{integrationId}": {
+      "schema": { "$ref": "#/entities/IntegrationRecord" },
+      "description": "Workspace-scoped integration capability and connection metadata."
+    },
+    "/workspaces/{workspaceId}/encryptedCredentials/{credentialId}": {
+      "schema": { "$ref": "#/entities/EncryptedCredentialRecord" },
+      "description": "Server-only AES-256-GCM encrypted external credential storage; client access strictly denied."
+    },
+    "/workspaces/{workspaceId}/oauthStates/{stateId}": {
+      "schema": { "$ref": "#/entities/EncryptedCredentialRecord" },
+      "description": "Server-only OAuth CSRF state tokens; client access strictly denied."
+    },
+    "/workspaces/{workspaceId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ApplicationSetting" },
+      "description": "Centralized workspace settings records."
+    },
+    "/workspaces/{workspaceId}/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable append-only workspace audit logs."
+    },
+    "/workspaces/{workspaceId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationRecord" },
+      "description": "Workspace system and governance notifications."
+    },
+    "/workspaces/{workspaceId}/invitations/{invitationId}": {
+      "schema": { "$ref": "#/entities/WorkspaceInvitation" },
+      "description": "Workspace invitations managed by owners and administrators."
+    },
+    "/workspaces/{workspaceId}/agentConfigs/{agentId}": {
+      "schema": { "$ref": "#/entities/AgentConfig" },
+      "description": "Future Phase 3 AI agent definitions."
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}": {
+      "schema": { "$ref": "#/entities/WorkflowRecord" },
+      "description": "Future Phase 4 automation workflow definitions."
+    },
+    "/workspaces/{workspaceId}/approvals/{approvalId}": {
+      "schema": { "$ref": "#/entities/ApprovalRecord" },
+      "description": "Future Phase 5 approval queue items."
+    },
+    "/workspaces/{workspaceId}/googleConnections/{connectionId}": {
+      "schema": { "$ref": "#/entities/GoogleConnection" },
+      "description": "User-owned workspace Google connection metadata."
+    },
+    "/workspaces/{workspaceId}/appsScriptProjects/{projectRecordId}": {
+      "schema": { "$ref": "#/entities/AppsScriptProject" },
+      "description": "Workspace-linked Google Apps Script project metadata."
+    },
+    "/workspaces/{workspaceId}/appsScriptSnapshots/{snapshotId}": {
+      "schema": { "$ref": "#/entities/AppsScriptSnapshot" },
+      "description": "Recoverable pre-update backups and release snapshots of Apps Script projects."
+    },
+    "/workspaces/{workspaceId}/appsScriptVersions/{versionId}": {
+      "schema": { "$ref": "#/entities/AppsScriptVersion" },
+      "description": "Immutable Apps Script project version records."
+    },
+    "/workspaces/{workspaceId}/appsScriptDeployments/{deploymentId}": {
+      "schema": { "$ref": "#/entities/AppsScriptDeployment" },
+      "description": "Apps Script Web App and API Executable deployments."
+    },
+    "/workspaces/{workspaceId}/executionTargets/{targetId}": {
+      "schema": { "$ref": "#/entities/ApprovedExecutionTarget" },
+      "description": "Allowlisted Apps Script function execution registry."
+    },
+    "/workspaces/{workspaceId}/scriptExecutions/{executionId}": {
+      "schema": { "$ref": "#/entities/ScriptExecution" },
+      "description": "Audited Apps Script execution invocations and results."
+    },
+    "/workspaces/{workspaceId}/scriptTriggers/{triggerId}": {
+      "schema": { "$ref": "#/entities/ScriptTrigger" },
+      "description": "Antara-owned Apps Script trigger registry."
+    },
+    "/workspaces/{workspaceId}/googleIntegrationAudit/{auditId}": {
+      "schema": { "$ref": "#/entities/GoogleIntegrationAudit" },
+      "description": "Immutable Google integration and Apps Script activity audit log."
+    },
+    "/workspaces/{workspaceId}/aiRuns/{runId}": {
+      "schema": { "$ref": "#/entities/OrchestratorRun" },
+      "description": "Phase 3 multi-agent orchestrator run records."
+    },
+    "/workspaces/{workspaceId}/agentTasks/{taskId}": {
+      "schema": { "$ref": "#/entities/AgentTask" },
+      "description": "Phase 3 specialist task DAG nodes."
+    },
+    "/workspaces/{workspaceId}/agentExecutionEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/AgentExecutionEvent" },
+      "description": "Immutable AI run execution timeline events."
+    },
+    "/workspaces/{workspaceId}/agentArtifacts/{artifactId}": {
+      "schema": { "$ref": "#/entities/AgentArtifact" },
+      "description": "Agent-produced briefs, drafts, and diagnostic artifacts."
+    },
+    "/workspaces/{workspaceId}/brandKnowledge/{factId}": {
+      "schema": { "$ref": "#/entities/BrandKnowledgeFact" },
+      "description": "20-category structured brand facts with provenance and verification."
+    },
+    "/workspaces/{workspaceId}/brandMemory/{memoryId}": {
+      "schema": { "$ref": "#/entities/MemoryItem" },
+      "description": "7-namespace workspace and brand memory records."
+    },
+    "/workspaces/{workspaceId}/researchSources/{sourceId}": {
+      "schema": { "$ref": "#/entities/ResearchSource" },
+      "description": "Deduplicated external web citations."
+    },
+    "/workspaces/{workspaceId}/researchClaims/{claimId}": {
+      "schema": { "$ref": "#/entities/ClaimEvidence" },
+      "description": "Claim verification records and source conflict evaluations."
+    },
+    "/workspaces/{workspaceId}/strategyRecords/{strategyId}": {
+      "schema": { "$ref": "#/entities/StrategyRecord" },
+      "description": "7/14/30-day brand content strategies."
+    },
+    "/workspaces/{workspaceId}/contentDrafts/{draftId}": {
+      "schema": { "$ref": "#/entities/ContentDraft" },
+      "description": "Draft editorial deliverables awaiting Phase 4 publishing workflow."
+    },
+    "/workspaces/{workspaceId}/normalizedEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/NormalizedEvent" },
+      "description": "Deduplicated normalized events for intelligence playbooks."
+    },
+    "/workspaces/{workspaceId}/playbookRuns/{playbookRunId}": {
+      "schema": { "$ref": "#/entities/PlaybookRun" },
+      "description": "Playbook orchestration run records."
+    },
+    "/workspaces/{workspaceId}/aiUsageLedger/{ledgerId}": {
+      "schema": { "$ref": "#/entities/AiUsageLedger" },
+      "description": "Immutable AI token and cost ledger."
+    },
+    "/workspaces/{workspaceId}/aiConversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/AiConversation" },
+      "description": "Command Center conversation threads."
+    },
+    "/workspaces/{workspaceId}/aiMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/AiMessage" },
+      "description": "Command Center immutable conversation turns."
+    },
+    "/workspaces/{workspaceId}/marketingControls/{controlId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Workspace emergency stop and global/brand/platform pause controls."
+    },
+    "/workspaces/{workspaceId}/autonomyPolicies/{policyId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Per-brand Mode A/B/C autonomy policies and messaging/review/ad rules."
+    },
+    "/workspaces/{workspaceId}/growthObjectives/{objectiveId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Brand weekly, monthly, and quarterly growth targets."
+    },
+    "/workspaces/{workspaceId}/socialAccounts/{accountId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Connected social and creative provider account metadata (no raw tokens)."
+    },
+    "/workspaces/{workspaceId}/mediaAssets/{assetId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Validated workspace media asset registry and Firebase Storage paths."
+    },
+    "/workspaces/{workspaceId}/creativeBriefs/{briefId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Brand-safe visual creative briefs and Canva design links."
+    },
+    "/workspaces/{workspaceId}/canvaExportJobs/{jobId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Async Canva export job tracking records."
+    },
+    "/workspaces/{workspaceId}/contentItems/{contentId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Unified Phase 4 CMS content items with full lifecycle, variants, versions, and quality checks."
+    },
+    "/workspaces/{workspaceId}/approvalRequests/{approvalId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Payload-hash-bound human approval queue records."
+    },
+    "/workspaces/{workspaceId}/scheduledPosts/{postId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Durable Firestore scheduled posts with UTC timestamps, leases, and reconciliation flags."
+    },
+    "/workspaces/{workspaceId}/publishingAttempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Immutable publishing attempt and reconciliation history."
+    },
+    "/workspaces/{workspaceId}/socialConversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Policy-aware Social Inbox threads."
+    },
+    "/workspaces/{workspaceId}/webhookEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "HMAC-verified deduplicated webhook delivery logs."
+    },
+    "/workspaces/{workspaceId}/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Classified customer reviews and human-approved reply workflows."
+    },
+    "/workspaces/{workspaceId}/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Consent-tracked workspace leads and follow-up activities."
+    },
+    "/workspaces/{workspaceId}/adCampaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Paid campaign drafts, dry-runs, and owner-authorized campaigns."
+    },
+    "/workspaces/{workspaceId}/campaignBudgetPolicies/{policyId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Strict per-brand numeric paid spend caps and owner authorization."
+    },
+    "/workspaces/{workspaceId}/analyticsSnapshots/{snapshotId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Normalized provider analytics snapshots preserving null for unavailable metrics."
+    },
+    "/workspaces/{workspaceId}/performanceExperiments/{experimentId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Controlled marketing performance experiments generating Phase 3 candidate memories."
+    },
+    "/workspaces/{workspaceId}/marketingActivities/{activityId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Immutable unified marketing execution activity stream."
+    },
+    "/workspaces/{workspaceId}/autopilotPolicies/{policyId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Drive-to-Social Autopilot source folder monitoring and recurring publishing policies."
+    },
+    "/workspaces/{workspaceId}/autopilotFiles/{fileId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Persistent Drive video file registry with hashes, multimodal analysis, and generated metadata."
+    },
+    "/workspaces/{workspaceId}/autopilotJobs/{jobId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Durable Drive Autopilot publishing queue with UTC slots, leases, retries, and provider results."
+    },
+    "/workspaces/{workspaceId}/autopilotEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/Phase4MarketingDocument" },
+      "description": "Immutable Drive Autopilot execution and reconciliation history."
+    }
+  }
+}

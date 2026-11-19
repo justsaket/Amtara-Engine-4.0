@@ -1,0 +1,66 @@
+name: Antara Engine 4.0 CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, Rules Lint, Tests, Secret Scan & Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NODE_ENV: test
+      NEXT_TELEMETRY_DISABLED: '1'
+      ENABLE_REAL_GOOGLE_INTEGRATION_TESTS: 'false'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Firestore security rules lint
+        run: npm run lint:rules
+
+      - name: Automated unit & integration test suite
+        run: npm test
+
+      - name: Next.js production build
+        env:
+          NODE_ENV: production
+        run: npm run build
+
+      - name: Static bundle secret-leak verification
+        run: |
+          if [ -d .next/static ]; then
+            if grep -rnE "BEGIN [A-Z ]*PRIVATE KEY|ya29\.[A-Za-z0-9_-]{20,}|GOCSPX-[A-Za-z0-9_-]{12,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{24,}|(ENCRYPTION_KEY|SESSION_SECRET|FIREBASE_PRIVATE_KEY|GOOGLE_INTEGRATION_CLIENT_SECRET)\s*[:=]\s*['\"][^'\"]{12,}" .next/static; then
+              echo "ERROR: Potential secret detected in client static bundle!"
+              exit 1
+            fi
+            echo "Static bundle secret scan passed with zero matches."
+          fi
